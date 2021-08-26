@@ -54,7 +54,7 @@ Maven:
 <dependency>
     <groupId>org.pgpainless</groupId>
     <artifactId>pgpainless-core</artifactId>
-    <version>0.2.8</version>
+    <version>0.2.9</version>
 </dependency>
 ```
 
@@ -65,7 +65,7 @@ repositories {
 }
 
 dependencies {
-	compile 'org.pgpainless:pgpainless-core:0.2.0'
+	compile 'org.pgpainless:pgpainless-core:0.2.9'
 }
 ```
 
