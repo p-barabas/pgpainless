@@ -6,6 +6,12 @@ plugins {
     id 'java-library'
 }
 
+java {
+    registerFeature('logbackSupport') {
+        usingSourceSet(sourceSets.main)
+    }
+}
+
 dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
     testImplementation "org.junit.jupiter:junit-jupiter-params:$junitVersion"
@@ -14,7 +20,7 @@ dependencies {
     // Logging
     api "org.slf4j:slf4j-api:$slf4jVersion"
     testImplementation "ch.qos.logback:logback-classic:$logbackVersion"
-    runtime "ch.qos.logback:logback-classic:$logbackVersion"
+    logbackSupportApi("ch.qos.logback:logback-classic:$logbackVersion")
 
     api "org.bouncycastle:bcprov-jdk15on:$bouncyCastleVersion"
     api "org.bouncycastle:bcpg-jdk15on:$bouncyCastleVersion"

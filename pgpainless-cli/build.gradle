@@ -37,9 +37,13 @@ dependencies {
     // implementation "ch.qos.logback:logback-core:1.2.6"
     // We want logback logging in tests and in the app
     testImplementation "ch.qos.logback:logback-classic:$logbackVersion"
-    implementation "ch.qos.logback:logback-classic:$logbackVersion"
 
     implementation(project(":pgpainless-sop"))
+    runtimeOnly(project(":pgpainless-sop")) {
+        capabilities {
+            requireCapability("org.pgpainless:pgpainless-sop-logback-support")
+        }
+    }
     implementation(project(":sop-java"))
     implementation(project(":sop-java-picocli"))
 
@@ -55,6 +59,8 @@ jar {
     manifest {
         attributes 'Main-Class': "$mainClassName"
     }
+
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }

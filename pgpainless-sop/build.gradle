@@ -12,13 +12,19 @@ repositories {
     mavenCentral()
 }
 
+java {
+    registerFeature('logbackSupport') {
+        usingSourceSet(sourceSets.main)
+    }
+}
+
 dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
 
     // Logging
     testImplementation "ch.qos.logback:logback-classic:$logbackVersion"
-    runtime "ch.qos.logback:logback-classic:$logbackVersion"
+    logbackSupportApi("ch.qos.logback:logback-classic:$logbackVersion")
 
     implementation(project(":pgpainless-core"))
     implementation(project(":sop-java"))
