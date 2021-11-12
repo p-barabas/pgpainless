@@ -4,7 +4,9 @@
 
 package org.pgpainless.algorithm;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -84,5 +86,15 @@ public enum HashAlgorithm {
      */
     public String getAlgorithmName() {
         return name;
+    }
+
+    public static int[] toAlgorithmIds(Collection<HashAlgorithm> algorithms) {
+        int[] ids = new int[algorithms.size()];
+        int i = 0;
+        for (Iterator<HashAlgorithm> iterator = algorithms.iterator(); iterator.hasNext(); ) {
+            int id = iterator.next().getAlgorithmId();
+            ids[i++] = id;
+        }
+        return ids;
     }
 }

@@ -4,6 +4,8 @@
 
 package org.pgpainless.algorithm;
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -123,5 +125,15 @@ public enum SymmetricKeyAlgorithm {
      */
     public int getAlgorithmId() {
         return algorithmId;
+    }
+
+    public static int[] toAlgorithmIds(Collection<SymmetricKeyAlgorithm> algorithms) {
+        int[] ids = new int[algorithms.size()];
+        int i = 0;
+        for (Iterator<SymmetricKeyAlgorithm> iterator = algorithms.iterator(); iterator.hasNext(); ) {
+            int id = iterator.next().getAlgorithmId();
+            ids[i++] = id;
+        }
+        return ids;
     }
 }

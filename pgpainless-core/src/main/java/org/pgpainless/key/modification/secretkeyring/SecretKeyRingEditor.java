@@ -34,6 +34,10 @@ import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.pgpainless.PGPainless;
+import org.pgpainless.algorithm.AlgorithmSuite;
+import org.pgpainless.algorithm.CompressionAlgorithm;
+import org.pgpainless.algorithm.Feature;
 import org.pgpainless.algorithm.HashAlgorithm;
 import org.pgpainless.algorithm.SignatureType;
 import org.pgpainless.algorithm.SymmetricKeyAlgorithm;
@@ -41,6 +45,7 @@ import org.pgpainless.implementation.ImplementationFactory;
 import org.pgpainless.key.OpenPgpFingerprint;
 import org.pgpainless.key.generation.KeyRingBuilder;
 import org.pgpainless.key.generation.KeySpec;
+import org.pgpainless.key.info.KeyRingInfo;
 import org.pgpainless.key.protection.CachingSecretKeyRingProtector;
 import org.pgpainless.key.protection.KeyRingProtectionSettings;
 import org.pgpainless.key.protection.PasswordBasedSecretKeyRingProtector;
@@ -82,7 +87,25 @@ public class SecretKeyRingEditor implements SecretKeyRingEditorInterface {
         PGPSecretKey primaryKey = secretKeyIterator.next();
         PGPPublicKey publicKey = primaryKey.getPublicKey();
         PGPPrivateKey privateKey = UnlockSecretKey.unlockSecretKey(primaryKey, secretKeyRingProtector);
-        publicKey = addUserIdToPubKey(userId, privateKey, publicKey);
+
+        KeyRingInfo info = PGPainless.inspectKeyRing(secretKeyRing);
+        PGPSignature primaryUserIdSignature = info.getLatestUserIdCertification(info.getPrimaryUserId());
+        PGPSignatureSubpacketVector primaryHashedSubpackets = primaryUserIdSignature.getHashedSubPackets();
+
+        AlgorithmSuite algorithmSuite = AlgorithmSuite.getDefaultAlgorithmSuite();
+        PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
+        hashedSubpackets.setIssuerKeyID(false, primaryKey.getKeyID());
+        hashedSubpackets.setIssuerFingerprint(false, primaryKey);
+        hashedSubpackets.setKeyFlags(true, primaryHashedSubpackets.getKeyFlags());
+        hashedSubpackets.setPreferredCompressionAlgorithms(false,
+                CompressionAlgorithm.toAlgorithmIds(algorithmSuite.getCompressionAlgorithms()));
+        hashedSubpackets.setPreferredHashAlgorithms(false,
+                HashAlgorithm.toAlgorithmIds(algorithmSuite.getHashAlgorithms()));
+        hashedSubpackets.setPreferredSymmetricAlgorithms(false,
+                SymmetricKeyAlgorithm.toAlgorithmIds(algorithmSuite.getSymmetricKeyAlgorithms()));
+        hashedSubpackets.setFeature(false, Feature.MODIFICATION_DETECTION.getFeatureId());
+
+        publicKey = addUserIdToPubKey(userId, privateKey, publicKey, hashedSubpackets.generate(), null);
         primaryKey = PGPSecretKey.replacePublicKey(primaryKey, publicKey);
 
         secretKeyList.add(primaryKey);
@@ -96,12 +119,19 @@ public class SecretKeyRingEditor implements SecretKeyRingEditorInterface {
         return this;
     }
 
-    private static PGPPublicKey addUserIdToPubKey(String userId, PGPPrivateKey privateKey, PGPPublicKey publicKey) throws PGPException {
+    private static PGPPublicKey addUserIdToPubKey(String userId,
+                                                  PGPPrivateKey privateKey,
+                                                  PGPPublicKey publicKey,
+                                                  @Nullable PGPSignatureSubpacketVector hashedSubpackets,
+                                                  @Nullable PGPSignatureSubpacketVector unhashedSubpackets)
+            throws PGPException {
         if (privateKey.getKeyID() != publicKey.getKeyID()) {
             throw new IllegalArgumentException("Key-ID mismatch!");
         }
         // Create signature with new user-id and add it to the public key
         PGPSignatureGenerator signatureGenerator = SignatureUtils.getSignatureGeneratorFor(publicKey);
+        signatureGenerator.setHashedSubpackets(hashedSubpackets);
+        signatureGenerator.setUnhashedSubpackets(unhashedSubpackets);
         signatureGenerator.init(SignatureType.POSITIVE_CERTIFICATION.getCode(), privateKey);
 
         PGPSignature userIdSignature = signatureGenerator.generateCertification(userId, publicKey);
