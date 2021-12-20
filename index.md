@@ -80,6 +80,14 @@ This allows PGPainless to be used as a command line application for encryption/d
 More importantly though, this allows to plug PGPainless into the [Sequoia OpenPGP Interoperability Test Suite](https://tests.sequoia-pgp.org/).
 This extensive test suite demonstrates how closely PGPainless is following the standard, especially when it comes to signature verification.
 
+## Security Audits
+
+In late 2021, PGPainless was subject to an extensive security audit by the the pentesting
+team of [Cure53](https://cure53.de). The audit was generously sponsored and arranged by [FlowCrypt.com](https://flowcrypt.com)!
+
+Results of the audit [are publicly available here](assets/Audit-PGPainless.pdf).
+Wherever possible, findings of the audit have been fixed in a timely manner.
+
 ## Forever Free Software
 
 PGPainless is licensed under the Apache License 2.0 and this will never change.
