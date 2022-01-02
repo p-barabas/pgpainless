@@ -9,6 +9,8 @@ import org.bouncycastle.bcpg.sig.EmbeddedSignature;
 import org.bouncycastle.bcpg.sig.Exportable;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.IntendedRecipientFingerprint;
+import org.bouncycastle.bcpg.sig.IssuerFingerprint;
+import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
@@ -17,6 +19,7 @@ import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.Revocable;
 import org.bouncycastle.bcpg.sig.RevocationKey;
 import org.bouncycastle.bcpg.sig.RevocationReason;
+import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.bcpg.sig.SignatureExpirationTime;
 import org.bouncycastle.bcpg.sig.SignatureTarget;
 import org.bouncycastle.bcpg.sig.SignerUserID;
@@ -36,9 +39,16 @@ public class SignatureSubpacketsHelper {
             org.pgpainless.algorithm.SignatureSubpacket type = org.pgpainless.algorithm.SignatureSubpacket.fromCode(subpacket.getType());
             switch (type) {
                 case signatureCreationTime:
+                    SignatureCreationTime sigCreationTime = (SignatureCreationTime) subpacket;
+                    subpackets.setSignatureCreationTime(sigCreationTime);
+                    break;
                 case issuerKeyId:
+                    IssuerKeyID issuerKeyID = (IssuerKeyID) subpacket;
+                    subpackets.setIssuerKeyId(issuerKeyID);
+                    break;
                 case issuerFingerprint:
-                    // ignore, we override this anyways
+                    IssuerFingerprint issuerFingerprint = (IssuerFingerprint) subpacket;
+                    subpackets.setIssuerFingerprint(issuerFingerprint);
                     break;
                 case signatureExpirationTime:
                     SignatureExpirationTime sigExpTime = (SignatureExpirationTime) subpacket;

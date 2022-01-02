@@ -39,6 +39,7 @@ import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -449,11 +450,9 @@ public class SignatureSubpacketsTest {
         long keyId = fingerprint.getKeyId();
 
         PGPSignatureSubpacketGenerator subpackets = new PGPSignatureSubpacketGenerator();
-        // These are not extracted from the vector
         subpackets.setSignatureCreationTime(true, sigCreationDate);
         subpackets.setIssuerKeyID(true, keyId);
         subpackets.setIssuerFingerprint(true, publicKeys.getPublicKey());
-        // These are extracted
         subpackets.setSignatureExpirationTime(true, 256000);
         subpackets.setExportable(true, true);
         subpackets.setTrust(true, 5, 15);
@@ -488,12 +487,9 @@ public class SignatureSubpacketsTest {
         SignatureSubpackets wrapper = SignatureSubpackets.createSubpacketsFrom(subpackets.generate());
         PGPSignatureSubpacketVector vector = SignatureSubpacketsHelper.toVector(wrapper);
 
-        // Verify these are not extracted
-        assertEquals(0, vector.getIssuerKeyID());
-        assertNull(vector.getIssuerFingerprint());
-        assertNull(vector.getSignatureCreationTime());
-
-        // Verify these are extracted
+        assertEquals(keyId, vector.getIssuerKeyID());
+        assertEquals(fingerprint.toString(), Hex.toHexString(vector.getIssuerFingerprint().getFingerprint()).toUpperCase());
+        assertEquals(sigCreationDate.getTime(), vector.getSignatureCreationTime().getTime());
         assertEquals(256000, vector.getSignatureExpirationTime());
         assertTrue(((Exportable) vector.getSubpacket(SignatureSubpacketTags.EXPORTABLE)).isExportable());
         TrustSignature trust = (TrustSignature) vector.getSubpacket(SignatureSubpacketTags.TRUST_SIG);
