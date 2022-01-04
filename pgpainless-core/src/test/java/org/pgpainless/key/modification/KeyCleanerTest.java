@@ -1,19 +1,18 @@
 package org.pgpainless.key.modification;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 import java.io.IOException;
 
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
-import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.junit.jupiter.api.Test;
 import org.pgpainless.PGPainless;
 import org.pgpainless.signature.SignatureFilter;
-import org.pgpainless.util.ArmorUtils;
 
-public class KeyMinifierTest {
+public class KeyCleanerTest {
 
     private static final String ALICE_CERT = "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" +
             "Version: PGPainless\n" +
@@ -37,6 +36,7 @@ public class KeyMinifierTest {
             "Aw==\n" +
             "=iERs\n" +
             "-----END PGP PUBLIC KEY BLOCK-----\n";
+
     private static final String BOB_CERT = "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" +
             "Version: PGPainless\n" +
             "Comment: 718B BA02 190A 08F9 1716  AB51 DA16 1EEE 183E 7043\n" +
@@ -58,6 +58,7 @@ public class KeyMinifierTest {
             "ffrY6ZvoQNUhDK4A/j08wj4F/LQowcJG43m3UyWKOmL0TN5bH5rVwKWaTJQG\n" +
             "=EsCN\n" +
             "-----END PGP PUBLIC KEY BLOCK-----\n";
+
     private static final String BOB_CERT_WITH_ALICE_CERTIFICATION = "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" +
             "Version: PGPainless\n" +
             "Comment: 718B BA02 190A 08F9 1716  AB51 DA16 1EEE 183E 7043\n" +
@@ -83,23 +84,92 @@ public class KeyMinifierTest {
             "=WZ7v\n" +
             "-----END PGP PUBLIC KEY BLOCK-----\n";
 
+    public static final String EXTERNAL_REVOCATION__REVOCATION_KEY = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
+            "Version: PGPainless\n" +
+            "Comment: D0D1 B13D 8BB6 852C 213A  5549 2C52 E85E EED5 E82A\n" +
+            "Comment: Alice Revocation Key\n" +
+            "\n" +
+            "lFgEYdRwyhYJKwYBBAHaRw8BAQdAPC+dFOyKFSBy7Qz2awGPU+vIrX5hBadnrG8N\n" +
+            "zG3NfrwAAP0WSo5Kn0aQtM7h+8rGpwBo3szsaH7CRD+Gaqp8Q24F2RINtBRBbGlj\n" +
+            "ZSBSZXZvY2F0aW9uIEtleYiPBBMWCgBBBQJh1HDKCZAsUuhe7tXoKhahBNDRsT2L\n" +
+            "toUsITpVSSxS6F7u1egqAp4BApsBBZYCAwEABIsJCAcFlQoJCAsCmQEAACf9APwK\n" +
+            "Gmei73KQT4/z76d/5WuYGxKAOPog/Hz2VAc0jzqzDwEA62lXYaxcBHJn+uHoOG7T\n" +
+            "oiX2aQnne4iIYcWmOgvY4QycXQRh1HDKEgorBgEEAZdVAQUBAQdATRTv5UOhlt4f\n" +
+            "fT/PhEugmWVP0XQfhaSM+kzbwN/Xm2cDAQgHAAD/S3osE7TaXrXptLoryqSMY1Cf\n" +
+            "k7oEwnPbv9FC7Oei09ATvYh1BBgWCgAdBQJh1HDKAp4BApsMBZYCAwEABIsJCAcF\n" +
+            "lQoJCAsACgkQLFLoXu7V6Cp5NgD/Y7g7/xYuezpDL7Coqmeu6u5XvYKms5UlcZD/\n" +
+            "b+uhiw4BALx3vGXtJrsbMwHrM0Ecw8fOA9SH2/DsOwmUSLLjFlsOnFgEYdRwyhYJ\n" +
+            "KwYBBAHaRw8BAQdAvFlxtUwZvzIqSfkcJPZijjIMNChFZlTuk5DhDAuqoAMAAPsH\n" +
+            "M9DfDGjPW6+XvS9MTTvQlk4BcqiGP1FEYpuaYsnzmhAAiNUEGBYKAH0FAmHUcMoC\n" +
+            "ngECmwIFlgIDAQAEiwkIBwWVCgkIC18gBBkWCgAGBQJh1HDKAAoJEPuFmxKUmdnK\n" +
+            "C8UA/jREUb1KkvEIhs4bdYZebRsXoMfzInrn1E//kLZP8xLGAP9R8VuQDKIZd4Q6\n" +
+            "/DXNcPu7z6Wc75PEvexXk7cEGBX3AAAKCRAsUuhe7tXoKnvIAP9tOz8dckunUWF+\n" +
+            "KLYPTTXDnHce4VLxNSVOVPor9B9ktAD/doKezBSzrGtqt9/3TTbsu5VJ9i2ZORNB\n" +
+            "6OfztujPTwc=\n" +
+            "=EJqs\n" +
+            "-----END PGP PRIVATE KEY BLOCK-----\n";
+    public static final String EXTERNAL_REVOCATION__REVOKED_KEY = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
+            "Version: PGPainless\n" +
+            "Comment: 2204 7599 9369 DD73 6A62  E639 D801 10F1 B00F 90BB\n" +
+            "Comment: Alice Key\n" +
+            "\n" +
+            "lFgEYdRwyhYJKwYBBAHaRw8BAQdA6qzPVBbQjKapdfbFqE2Cnt4TEtqk6E1DXYQP\n" +
+            "pnr5fEYAAQDah6jv5E31ez3aspY65vYrXFeuTZluGN6Fbk5QbiWmiRE4iI0EHxYK\n" +
+            "AD8FAmHUcMoJkNgBEPGwD5C7FqEEIgR1mZNp3XNqYuY52AEQ8bAPkLsXjIAW0NGx\n" +
+            "PYu2hSwhOlVJLFLoXu7V6CoAAJQOAP9rnCbUZhD8HDi9zLmHxSOwSZ/vebG4SYED\n" +
+            "bbZ6V9f5qwD9GShXPH/S2dKwuXleJw58wtvjOYyFCXreJVmGKDNHKwSIewQgFgoA\n" +
+            "LQUCYdRwygmQLFLoXu7V6CoWoQTQ0bE9i7aFLCE6VUksUuhe7tXoKgKHAAKdAwAA\n" +
+            "kX0BAJuN0LJ5Lxyx773/HuzOR4CFfBE2fZSJ+P49EyLnLMpvAP9H5SlYTCEq7zgK\n" +
+            "N9bNBIagRdkR7zs+z6uboyjsu9T/ArQJQWxpY2UgS2V5iI8EExYKAEEFAmHUcMoJ\n" +
+            "kNgBEPGwD5C7FqEEIgR1mZNp3XNqYuY52AEQ8bAPkLsCngECmwEFlgIDAQAEiwkI\n" +
+            "BwWVCgkICwKZAQAAyLcBANS9fjJMlrx7TAnhiLmgd5taYdQ9IfvI9X1kgaoMhim0\n" +
+            "AQD4TQngO5VoujJnYNKcUVsk9buYxWBuJ7JY6HkjUM5gCZxdBGHUcMoSCisGAQQB\n" +
+            "l1UBBQEBB0C6Wg/BwY4DWyRhG+aqCRAjJpFr7OKqli8BrOzz2TgaFAMBCAcAAP9w\n" +
+            "rL0iSxIGivqRIltn5HhT/2zcptkVKKDvVptjCmAsIA+hiHUEGBYKAB0FAmHUcMoC\n" +
+            "ngECmwwFlgIDAQAEiwkIBwWVCgkICwAKCRDYARDxsA+Qu7tZAP928VFCnN64PyFr\n" +
+            "tkV7VoEX+v4JmMnSjiRKlnB4ZCTccwD9EEczALfgB61YZ4EqOC70x4KzwKMWQXG/\n" +
+            "qRvnB/72XQecWARh1HDKFgkrBgEEAdpHDwEBB0D2ULcyNJo2DjjapnC9zS9Qa9Rp\n" +
+            "TYEu0Kwy4qFD+Y8XFwAA/1vhpk+/2EXctP9bgd4fA/Bu9KTgzFKFiLwlAO90K7NH\n" +
+            "EuGI1QQYFgoAfQUCYdRwygKeAQKbAgWWAgMBAASLCQgHBZUKCQgLXyAEGRYKAAYF\n" +
+            "AmHUcMoACgkQ/VEQxA8tdFf5fQEApz5zynVmb/mbK62yYTE4Z8HjfyIzhqxJp+Wp\n" +
+            "Xmi3A8ABAI1/8pGiP+3+Uw5v8r4Adh1KlCq1pM01qjxqN2O5KUIMAAoJENgBEPGw\n" +
+            "D5C7EacA/3esnaCSv+qNcWQMk6iRUoVJhzqhODlz/VLGYnVeyFARAPwPuyGRUOgQ\n" +
+            "FU0mpQR8D4hmS6eNcvSTRDe3sLahhKFRAA==\n" +
+            "=S/04\n" +
+            "-----END PGP PRIVATE KEY BLOCK-----\n";
+
     @Test
     public void testMinificationByRemovalOfThirdPartySigs() throws PGPException, IOException {
-        PGPPublicKeyRing bobCert = PGPainless.readKeyRing().publicKeyRing(BOB_CERT_WITH_ALICE_CERTIFICATION);
+        PGPPublicKeyRing bobCert = PGPainless.readKeyRing()
+                .publicKeyRing(BOB_CERT_WITH_ALICE_CERTIFICATION);
 
         PGPPublicKey bobsSignedPrimaryKey = bobCert.getPublicKey();
 
-        final PGPPublicKeyRing finalBobCert = bobCert;
-        PGPPublicKey bobsCleanedPrimaryKey = Minifier.filterSignatures(bobsSignedPrimaryKey, new SignatureFilter() {
-            @Override
-            public boolean accept(PGPSignature signature) {
-                // Quick, unsafe way of checking if sig was made by some of bobs keys
-                return finalBobCert.getPublicKey(signature.getKeyID()) != null;
-            }
-        });
-
+        PGPPublicKey bobsCleanedPrimaryKey = KeyCleaner.filterSignatures(bobsSignedPrimaryKey, SignatureFilter.rejectThirdPartySignatures(bobCert));
         bobCert = PGPPublicKeyRing.insertPublicKey(bobCert, bobsCleanedPrimaryKey);
 
-        assertEquals(ArmorUtils.toAsciiArmoredString(bobCert), BOB_CERT);
+        assertArrayEquals(bobCert.getEncoded(), PGPainless.readKeyRing().publicKeyRing(BOB_CERT).getEncoded());
+    }
+
+    @Test
+    public void testMinifyFreshKeyDoesNotChange()
+            throws PGPException, IOException {
+        PGPPublicKeyRing certificate = PGPainless.readKeyRing().publicKeyRing(ALICE_CERT);
+
+        PGPPublicKeyRing cleaned = KeyCleaner.filterThirdPartySignatures(certificate);
+
+        assertArrayEquals(certificate.getEncoded(), cleaned.getEncoded());
+    }
+
+    @Test
+    public void testRevocationByRevocationKeyIsNotRemoved() throws IOException, PGPException {
+        PGPSecretKeyRing revocationKey = PGPainless.readKeyRing().secretKeyRing(EXTERNAL_REVOCATION__REVOCATION_KEY);
+        PGPSecretKeyRing revokedKey = PGPainless.readKeyRing().secretKeyRing(EXTERNAL_REVOCATION__REVOKED_KEY);
+
+        PGPPublicKeyRing revokedCert = PGPainless.extractCertificate(revokedKey);
+
+        PGPPublicKeyRing cleanedCert = KeyCleaner.filterThirdPartySignatures(revokedCert);
+
+        assertArrayEquals(revokedCert.getEncoded(), cleanedCert.getEncoded());
     }
 }

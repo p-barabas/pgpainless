@@ -4,19 +4,36 @@
 
 package org.pgpainless.key.modification;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import javax.annotation.Nonnull;
 
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 import org.pgpainless.algorithm.SignatureType;
-import org.pgpainless.implementation.ImplementationFactory;
 import org.pgpainless.signature.SignatureFilter;
 
-public class Minifier {
+public class KeyCleaner {
+
+    public static @Nonnull PGPPublicKeyRing filterThirdPartySignatures(@Nonnull PGPPublicKeyRing certificate) throws PGPException {
+        List<PGPPublicKey> filteredKeys = new ArrayList<>();
+        List<PGPPublicKey> keys = new ArrayList<>();
+        Iterator<PGPPublicKey> keyIterator = certificate.getPublicKeys();
+        while (keyIterator.hasNext()) {
+            PGPPublicKey key = keyIterator.next();
+            keys.add(key);
+            PGPPublicKey filteredKey = filterSignatures(key,
+                    SignatureFilter.rejectThirdPartySignatures(certificate));
+            filteredKeys.add(filteredKey);
+        }
+
+        return new PGPPublicKeyRing(filteredKeys);
+    }
 
     /**
      * Return a copy of the passed in key, containing only signatures that pass the given signatureFilter.
@@ -28,7 +45,8 @@ public class Minifier {
      */
     public static @Nonnull PGPPublicKey filterSignatures(@Nonnull PGPPublicKey key, @Nonnull SignatureFilter signatureFilter)
             throws PGPException {
-        PGPPublicKey newKey = new PGPPublicKey(key.getPublicKeyPacket(), ImplementationFactory.getInstance().getKeyFingerprintCalculator());
+
+        PGPPublicKey filteredKey = key;
 
         // Key Signatures
         for (SignatureType type : Arrays.asList(
@@ -40,8 +58,8 @@ public class Minifier {
             Iterator<PGPSignature> iterator = key.getSignaturesOfType(type.getCode());
             while (iterator.hasNext()) {
                 PGPSignature signature = iterator.next();
-                if (signatureFilter.accept(signature)) {
-                    newKey = PGPPublicKey.addCertification(newKey, signature);
+                if (!signatureFilter.accept(signature)) {
+                    filteredKey = PGPPublicKey.removeCertification(filteredKey, signature);
                 }
             }
         }
@@ -52,8 +70,8 @@ public class Minifier {
             Iterator<PGPSignature> signatures = key.getSignaturesForID(userId);
             while (signatures.hasNext()) {
                 PGPSignature signature = signatures.next();
-                if (signatureFilter.accept(signature)) {
-                    newKey = PGPPublicKey.addCertification(newKey, userId, signature);
+                if (!signatureFilter.accept(signature)) {
+                    filteredKey = PGPPublicKey.removeCertification(filteredKey, userId, signature);
                 }
             }
         }
@@ -64,12 +82,12 @@ public class Minifier {
             Iterator<PGPSignature> signatures = key.getSignaturesForUserAttribute(attribute);
             while (signatures.hasNext()) {
                 PGPSignature signature = signatures.next();
-                if (signatureFilter.accept(signature)) {
-                    newKey = PGPPublicKey.addCertification(newKey, attribute, signature);
+                if (!signatureFilter.accept(signature)) {
+                    filteredKey = PGPPublicKey.removeCertification(filteredKey, attribute, signature);
                 }
             }
         }
 
-        return newKey;
+        return filteredKey;
     }
 }
