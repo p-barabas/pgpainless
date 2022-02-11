@@ -1,118 +1,216 @@
-PGPainless is a wrapper around [Bouncycastle](https://www.bouncycastle.org/), which provides an easy to use, intuitive,
-but also powerful API for OpenPGP ([RFC4880](https://datatracker.ietf.org/doc/html/rfc4880)).
+<!--
+SPDX-FileCopyrightText: 2021 Paul Schaub <info@pgpainless.org>
 
-Its primary functionality is encrypting, signing, decrypting and verifying data, as well as generating and modifying keys.
+SPDX-License-Identifier: Apache-2.0
+-->
 
-## Why should I use it?
+# PGPainless - Use OpenPGP Painlessly!
+
+[![Travis (.com)](https://travis-ci.com/pgpainless/pgpainless.svg?branch=master)](https://travis-ci.com/pgpainless/pgpainless)
+[![Maven Central](https://badgen.net/maven/v/maven-central/org.pgpainless/pgpainless-core)](https://search.maven.org/artifact/org.pgpainless/pgpainless-core)
+[![Coverage Status](https://coveralls.io/repos/github/pgpainless/pgpainless/badge.svg?branch=master)](https://coveralls.io/github/pgpainless/pgpainless?branch=master)
+[![Interoperability Test-Suite](https://badgen.net/badge/Sequoia%20Test%20Suite/%232/green)](https://tests.sequoia-pgp.org/)
+[![PGP](https://img.shields.io/badge/pgp-A027%20DB2F%203E1E%20118A-blue)](https://keyoxide.org/7F9116FEA90A5983936C7CFAA027DB2F3E1E118A)
+[![REUSE status](https://api.reuse.software/badge/github.com/pgpainless/pgpainless)](https://api.reuse.software/info/github.com/pgpainless/pgpainless)
+
+## About
+
+PGPainless aims to make using OpenPGP in Java projects as simple as possible.
+It does so by introducing an intuitive Builder structure, which allows easy
+setup of encryption/decryption operations, as well as straight forward key generation.
+
+PGPainless is based around the Bouncycastle java library and can be used on Android down to API level 10.
+It can be configured to either use the Java Cryptographic Engine (JCE), or Bouncycastles lightweight reimplementation.
+
+While signature verification in Bouncycastle is limited to signature correctness, PGPainless goes much further.
+It also checks if signing subkeys are properly bound to their primary key, if keys are expired or revoked, as well as
+if keys are allowed to create signatures in the first place.
+
+These rigorous checks make PGPainless stand out from other Java-based OpenPGP libraries and are the reason why
+PGPainless currently [*scores second place* on Sequoia-PGPs Interoperability Test-Suite](https://tests.sequoia-pgp.org).
 
 > At FlowCrypt we are using PGPainless in our Kotlin code bases on Android and on server side.
-> The ergonomy of legacy PGP tooling on Java is not very good, and PGPainless improves it greatly.
+> The ergonomics of legacy PGP tooling on Java is not very good, and PGPainless improves it greatly.
 > We were so happy with our initial tests and with Paul - the maintainer, that we decided to sponsor further development of this library.
 >
 > -Tom @ FlowCrypt.com
 
-There are a bunch of reasons why you should consider switching to PGPainless:
+> Finally, testing irrefutably confirmed that the library removes many associated difficulties with PGP use in its provision of an approachable and uncomplicated API.
+> In this regard, Paul Schaub deserves the utmost praise.
+>
+> -Mario @ Cure53.de
 
-### Easy to use API
+## Get Started
 
-One main focus of the project is ease of use.
-Using Bouncycastle can be a hassle, since simple tasks require a substantial amount of boilerplate code and small
-mistakes are easily made.
-PGPainless aims at providing a simple interface to get the job done quickly, while not trading away functionality or
-correctness.
+The very easiest way to start using OpenPGP on Java/Kotlin based systems is to use an implementation of [sop-java](https://github.com/pgpainless/sop-java).
+`sop-java` defines a very stripped down API and is super easy to get started with.
+Luckily PGPainless provides an implementation for the `sop-java` interface definitions in the form of [pgpainless-sop](pgpainless-sop/README.md).
 
-For examples about how to use the API, see the projects 
-[readme](https://github.com/pgpainless/pgpainless/blob/master/README.md).
+If you need more flexibility, directly using `pgpainless-core` is the way to go.
 
-### Complementing Bouncycastle
+## Features
 
-**PGPainless has Bouncycastle truly figured out!**
+Most of PGPainless' features can be accessed directly from the `PGPainless` class.
+If you want to get started, this class is your friend :)
 
-If you already use BC in your code, PGPainless is a perfect complement!
-It allows you to remove many lines of boilerplate code and offers you the certitude of a dedicated JUnit test suite.
+For further details you should check out the [javadoc](https://javadoc.io/doc/org.pgpainless/pgpainless-core)!
 
-Furthermore PGPainless is scoring *second place* on the very extensive [Sequoia OpenPGP Interoperability Test Suite](https://tests.sequoia-pgp.org).
+### Handle Keys
+Reading keys from ASCII armored strings or from binary files is easy:
 
-We have studied BC intensively, identified its shortcomings and came up with solutions to those:
-
-Contrary to vanilla BC and some other BC-based OpenPGP libraries, PGPainless does signature verification **the right way**.
-It not only checks for signature *correctness*, but goes the extra mile to also check signature *validity* by taking into consideration key expiration dates, revocations, signature structures, etc.
-
-Take a look at [this blog post](https://blog.jabberhead.tk/2021/04/03/why-signature-verification-in-openpgp-is-hard/) to get an idea of how complex signature verification with OpenPGP truly is.
-
-### Android Support
-PGPainless is designed to work on Android versions down to [API level 10](https://developer.android.com/about/versions/android-2.3.3) (Gingerbread).
-This makes PGPainless a good choice for implementing OpenPGP encryption in your Android app.
-
-Compatibility with certain Android APIs is ensured through [Animalsniffer](http://www.mojohaus.org/animal-sniffer/).
-
-## Releases
-PGPainless is released on the maven central repository. Including it in your project is simple:
-
-Maven:
-```xml
-<dependency>
-    <groupId>org.pgpainless</groupId>
-    <artifactId>pgpainless-core</artifactId>
-    <version>0.2.13</version>
-</dependency>
+```java
+        String key = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n"...
+        PGPSecretKeyRing secretKey = PGPainless.readKeyRing()
+                .secretKeyRing(key);
 ```
 
-Gradle:
+Similarly, keys can quickly be exported::
+
+```java
+        PGPSecretKeyRing secretKey = ...;
+        String armored = PGPainless.asciiArmor(secretKey);
+        ByteArrayOutputStream binary = new ByteArrayOutputStream();
+        secretKey.encode(binary);
+```
+
+Extract a public key certificate from a secret key:
+
+```java
+        PGPSecretKeyRing secretKey = ...;
+        PGPPublicKeyRing certificate = PGPainless.extractCertificate(secretKey);
+```
+
+### Easily Generate Keys
+PGPainless comes with a simple to use `KeyRingBuilder` class that helps you to quickly generate modern OpenPGP keys.
+There are some predefined key archetypes, but it is possible to fully customize key generation to your needs.
+
+```java
+        // RSA key without additional subkeys
+        PGPSecretKeyRing secretKeys = PGPainless.generateKeyRing()
+                .simpleRsaKeyRing("Juliet <juliet@montague.lit>", RsaLength._4096);
+                
+        // EdDSA primary key with EdDSA signing- and XDH encryption subkeys
+        PGPSecretKeyRing secretKeys = PGPainless.generateKeyRing()
+                .modernKeyRing("Romeo <romeo@montague.lit>", "I defy you, stars!");
+
+        // Customized key
+        PGPSecretKeyRing keyRing = PGPainless.buildKeyRing()
+                .setPrimaryKey(KeySpec.getBuilder(
+                        RSA.withLength(RsaLength._8192),
+                        KeyFlag.SIGN_DATA, KeyFlag.CERTIFY_OTHER))
+                .addSubkey(
+                        KeySpec.getBuilder(ECDSA.fromCurve(EllipticCurve._P256), KeyFlag.SIGN_DATA)
+                                .overrideCompressionAlgorithms(CompressionAlgorithm.ZLIB)
+                ).addSubkey(
+                        KeySpec.getBuilder(
+                                        ECDH.fromCurve(EllipticCurve._P256),
+                                        KeyFlag.ENCRYPT_COMMS, KeyFlag.ENCRYPT_STORAGE)
+                ).addUserId("Juliet <juliet@montague.lit>")
+                .addUserId("xmpp:juliet@capulet.lit")
+                .setPassphrase("romeo_oh_Romeo<3")
+                .build();
+```
+
+### Encrypt and Sign Data
+PGPainless makes it easy and painless to encrypt and/or sign data.
+Passed in keys are automatically evaluated, so that you don't accidentally encrypt to revoked or expired keys.
+PGPainless will furthermore detect which algorithms are supported by recipient keys and will negotiate
+algorithms accordingly.
+Still it allows you to manually specify which algorithms to use of course.
+
+```java
+        EncryptionStream encryptionStream = PGPainless.encryptAndOrSign()
+                .onOutputStream(outputStream)
+                .withOptions(
+                        ProducerOptions.signAndEncrypt(
+                                new EncryptionOptions()
+                                        .addRecipient(aliceKey)
+                                        .addRecipient(bobsKey)
+                                        // optionally encrypt to a passphrase
+                                        .addPassphrase(Passphrase.fromPassword("password123"))
+                                        // optionally override symmetric encryption algorithm
+                                        .overrideEncryptionAlgorithm(SymmetricKeyAlgorithm.AES_192),
+                                new SigningOptions()
+                                        // Sign in-line (using one-pass-signature packet)
+                                        .addInlineSignature(secretKeyDecryptor, aliceSecKey, signatureType)
+                                        // Sign using a detached signature
+                                        .addDetachedSignature(secretKeyDecryptor, aliceSecKey, signatureType)
+                                        // optionally override hash algorithm
+                                        .overrideHashAlgorithm(HashAlgorithm.SHA256)
+                        ).setAsciiArmor(true) // Ascii armor or not
+                );
+
+        Streams.pipeAll(plaintextInputStream, encryptionStream);
+        encryptionStream.close();
+
+        // Information about the encryption (algorithms, detached signatures etc.)
+        EncryptionResult result = encryptionStream.getResult();
+```
+
+### Decrypt and Verify Signatures
+
+Decrypting data and verifying signatures is being done similarly.
+PGPainless will not only verify *correctness* of signatures, but also if the signing key was allowed to create the signature.
+A key might not be allowed to create signatures if, for example, it expired or was revoked, or was not properly bound to the key ring.
+Furthermore, PGPainless will reject signatures made using weak algorithms like SHA-1.
+This behaviour can be modified though using the `Policy` class.
+
+```java
+        DecryptionStream decryptionStream = PGPainless.decryptAndOrVerify()
+                .onInputStream(encryptedInputStream)
+                .withOptions(new ConsumerOptions()
+                        .addDecryptionKey(bobSecKeys, secretKeyProtector)
+                        .addVerificationCert(alicePubKeys)
+                );
+
+        Streams.pipeAll(decryptionStream, outputStream);
+        decryptionStream.close();
+
+        // Result contains information like signature status etc.
+        OpenPgpMetadata metadata = decryptionStream.getResult();
+```
+
+*After* the `DecryptionStream` was closed, you can get metadata about the processed data by retrieving the `OpenPgpMetadata`.
+Again, this object will contain information about how the message was encrypted, who signed it and so on.
+
+#### Many more examples can be found in the [examples package](pgpainless-core/src/test/java/org/pgpainless/example)!!!
+
+## Include PGPainless in your Project
+
+PGPainless is available on maven central. In order to include it in your project, just add the
+maven central repository and add PGPainless as a dependency.
+
 ```gradle
 repositories {
 	mavenCentral()
 }
 
 dependencies {
-	compile 'org.pgpainless:pgpainless-core:0.2.13'
+	implementation 'org.pgpainless:pgpainless-core:1.0.3'
 }
 ```
 
-There are [snapshot releases](https://oss.sonatype.org/content/repositories/snapshots/org/pgpainless/pgpainless-core/) available as well.
-
-## Command Line Interface
-
-PGPainless provides an implementation of the [Stateless OpenPGP Command Line Interface](https://datatracker.ietf.org/doc/html/draft-dkg-openpgp-stateless-cli-01) 
-in the `pgpainless-sop` module.
-This allows PGPainless to be used as a command line application for encryption/decryption and signature creation/validation.
-
-More importantly though, this allows to plug PGPainless into the [Sequoia OpenPGP Interoperability Test Suite](https://tests.sequoia-pgp.org/).
-This extensive test suite demonstrates how closely PGPainless is following the standard, especially when it comes to signature verification.
-
-## Security Audits
-
-In late 2021, PGPainless was subject to an extensive security audit by the the pentesting
-team of [Cure53](https://cure53.de). The audit was generously sponsored and arranged by [FlowCrypt.com](https://flowcrypt.com)!
-
-Results of the audit [are publicly available here](assets/Audit-PGPainless.pdf).
-Wherever possible, findings of the audit have been fixed in a timely manner.
-
-## Forever Free Software
-
-PGPainless is licensed under the Apache License 2.0 and this will never change.
-
-**Free Libre Open Source Software Rocks!**
-
 ## About
-PGPainless was created [during a Google Summer of Code project](https://blog.jabberhead.tk/summer-of-code-2018/),
-for which an easy to use OpenPGP API for Java and Android was needed.
+PGPainless is a by-product of my [Summer of Code 2018 project](https://blog.jabberhead.tk/summer-of-code-2018/)
+implementing OpenPGP support for the XMPP client library [Smack](https://github.com/igniterealtime/Smack).
+For that project I was in need of a simple-to-use OpenPGP library.
 
-Originally we looked into forking [bouncy-gpg](https://github.com/neuhalje/bouncy-gpg),
-but since support for lower Android versions was a requirement, PGPainless was born as an independent project.
-In its early development stages the library was however influenced by bouncy-gpg written by Jens Neuhalje.
+Originally I was going to use [Bouncy-GPG](https://github.com/neuhalje/bouncy-gpg) for my project,
+but ultimately I decided to create my own OpenPGP library which better fits my needs.
+
+However, PGPainless was heavily influenced by Bouncy-GPG.
+
+To reach out to the development team, feel free to send a mail: info@pgpainless.org
 
 ## Development
-PGPainless is currently developed by [Paul Schaub (@vanitasvitae)](https://blog.jabberhead.tk).
+PGPainless is developed in - and accepts contributions from - the following places:
 
-### Contribute
-Contributions are always welcome :) The project is developed in the following places:
 * [Github](https://github.com/pgpainless/pgpainless)
-* [Codeberg](https://codeberg.org/pgpainless/pgpainless)
+* [Codeberg](https://codeberg.org/PGPainless/pgpainless)
 
-Pull requests are accepted on either of them.
+Please follow the [code of conduct](CODE_OF_CONDUCT.md) if you want to be part of the project.
 
-### Bug Reports
-If you encounter a bug, please make sure to check, whether the bug has already been reported
-either [here](https://github.com/pgpainless/pgpainless/issues),
-or [here](https://codeberg.org/PGPainless/pgpainless/issues), in order to avoid duplicate bug reports.
+## Acknowledgements
+Development on PGPainless is generously sponsored by [FlowCrypt.com](https://flowcrypt.com). Thank you very very very much!
+
+Continuous Integration is kindly provided by [Travis-CI.com](https://travis-ci.com/).
