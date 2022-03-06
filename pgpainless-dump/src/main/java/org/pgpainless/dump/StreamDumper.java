@@ -1,8 +1,8 @@
-// SPDX-FileCopyrightText: 2021 Paul Schaub <vanitasvitae@fsfe.org>
+// SPDX-FileCopyrightText: 2022 Paul Schaub <vanitasvitae@fsfe.org>
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package org.pgpainless.util;
+package org.pgpainless.dump;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -68,6 +68,8 @@ import org.pgpainless.algorithm.StreamEncoding;
 import org.pgpainless.algorithm.SymmetricKeyAlgorithm;
 import org.pgpainless.key.util.RevocationAttributes;
 import org.pgpainless.signature.subpackets.KeyServerPreferences;
+import org.pgpainless.util.CollectionUtils;
+import org.pgpainless.util.DateUtil;
 
 public class StreamDumper {
 
@@ -85,7 +87,8 @@ public class StreamDumper {
 
     }
 
-    public static void dump(InputStream inputStream, PGPSessionKey sessionKey, OutputStream outputStream) throws IOException, PGPException {
+    public static void dump(InputStream inputStream, PGPSessionKey sessionKey, OutputStream outputStream)
+            throws IOException, PGPException {
         PrintWriter printWriter = new PrintWriter(outputStream);
         PrintWriterWrapper pww = new PrintWriterWrapper(printWriter);
 
@@ -94,16 +97,15 @@ public class StreamDumper {
         printWriter.flush();
     }
 
-    private static void walkObjects(PrintWriterWrapper pww, PGPObjectFactory objectFactory, PGPSessionKey sessionKey) throws IOException, PGPException {
+    private static void walkObjects(PrintWriterWrapper pww, PGPObjectFactory objectFactory, PGPSessionKey sessionKey)
+            throws IOException, PGPException {
         Object next;
 
         while ((next = objectFactory.nextObject()) != null) {
 
             if (next instanceof PGPOnePassSignatureList) {
                 PGPOnePassSignatureList onePassSignatures = (PGPOnePassSignatureList) next;
-                Iterator<PGPOnePassSignature> iterator = onePassSignatures.iterator();
-                while (iterator.hasNext()) {
-                    PGPOnePassSignature pgpOnePassSignature = iterator.next();
+                for (PGPOnePassSignature pgpOnePassSignature : onePassSignatures) {
                     pww.appendLine("One-Pass Signature Packet").iind()
                             .appendLine("Type: " + SignatureType.valueOf(pgpOnePassSignature.getSignatureType()))
                             .appendLine("Public Key Algorithm: " + PublicKeyAlgorithm.fromId(pgpOnePassSignature.getKeyAlgorithm()))
@@ -276,7 +278,7 @@ public class StreamDumper {
 
             else if (next instanceof Packet) {
                 Packet packet = (Packet) next;
-                pww.appendLine("Experimental Packet: " + packet.toString());
+                pww.appendLine("Experimental Packet: " + packet);
             }
             /*
 
