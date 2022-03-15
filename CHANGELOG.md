@@ -5,7 +5,11 @@ SPDX-License-Identifier: CC0-1.0
 
 # PGPainless Changelog
 
-## 1.1.3-SNAPSHOT
+## 1.2.0-SNAPSHOT
+- Improve exception hierarchy for key-related exceptions
+  - See [PR](https://github.com/pgpainless/pgpainless/pull/261) for more information on how to migrate.
+
+## 1.1.3
 - Make `SigningOptions.getSigningMethods()` part of internal API
 - Fix crash when trying to do verification of unmatched `SignersUserId` signature subpacket
   - For now, verification of `SignersUserId` is disabled but can be enabled via `Policy.setSignerUserIdValidationLevel()`
