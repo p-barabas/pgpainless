@@ -292,6 +292,18 @@ public final class KeyRingUtils {
         return newSecretKey;
     }
 
+    /**
+     * Remove only the secret key part of the subkey with the given secretKeyId from the given secretKeys.
+     * Note: The public part of the subkey will remain on the key ring.
+     *
+     * This method is useful to remove long-term certification secret keys from online keys.
+     *
+     * @param secretKeys secret key ring
+     * @param secretKeyId if of the secret subkey to be removed
+     * @return secret key ring, but without the secret subkey
+     * @throws IOException
+     * @throws PGPException
+     */
     public static PGPSecretKeyRing removeSecretKey(PGPSecretKeyRing secretKeys, long secretKeyId)
             throws IOException, PGPException {
         if (secretKeys.getSecretKey(secretKeyId) == null) {
