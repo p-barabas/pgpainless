@@ -15,8 +15,10 @@ dependencies {
     api "org.slf4j:slf4j-api:$slf4jVersion"
     testImplementation "ch.qos.logback:logback-classic:$logbackVersion"
 
-    api "org.bouncycastle:bcprov-jdk15on:$bouncyCastleVersion"
-    api "org.bouncycastle:bcpg-jdk15on:$bouncyCastleVersion"
+    api (files("../lib/bcpg-jdk18on-171b18.jar"))
+    api (files("../lib/bcprov-jdk18on-171b18.jar"))
+//    api "org.bouncycastle:bcprov-jdk15on:$bouncyCastleVersion"
+//    api "org.bouncycastle:bcpg-jdk15on:$bouncyCastleVersion"
 
     // https://mvnrepository.com/artifact/com.google.code.findbugs/jsr305
     implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
