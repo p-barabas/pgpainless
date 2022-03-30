@@ -5,9 +5,26 @@ SPDX-License-Identifier: CC0-1.0
 
 # PGPainless Changelog
 
+
 ## 1.2.0-SNAPSHOT
 - Improve exception hierarchy for key-related exceptions
   - See [PR](https://github.com/pgpainless/pgpainless/pull/261) for more information on how to migrate.
+
+## 1.1.4
+- Add utility method `KeyRingUtils.removeSecretKey()` to remove secret key part from key ring
+  - This can come in handy when using primary keys stored offline
+- Add `EncryptionResult.isEncryptedFor(certificate)`
+- `ArmorUtils.toAsciiArmoredString()` methods now print out primary user-id and brief information about further user-ids (thanks @bratkartoffel for the patch)
+- Methods of `KeyRingUtils` and `ArmorUtils` classes are now annotated with `@Nonnull/@Nullable`
+- Enums `fromId(code)` methods are now annotated with `@Nullable` and there are now `requireFromId(code)` counterparts which are `@Nonnull`.
+- `ProducerOptions.setForYourEyesOnly()` is now deprecated (reason is deprecation in the 
+- [crypto-refresh-05](https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-05.html#name-special-filename-_console-d) document)
+- Add `SessionKey.toString()`
+- Partially fix generation of malformed signature packets when using different combinations of `StreamEncoding` and `DocumentSignatureType` values
+  - Unfortunately PGPainless still produces broken signatures when using either `StreamEncoding.TEXT` or `StreamEncoding.UTF8` in combination with `DocumentSignatureType.BINARY_DOCUMENT`.
+- Deprecate `ProducerOptions.setEncoding(StreamEncoding)`
+  - Will be removed in a future release
+- Remove `StreamEncoding.MIME` (was removed from the standard)
 
 ## 1.1.3
 - Make `SigningOptions.getSigningMethods()` part of internal API

@@ -30,6 +30,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * OutputStream that produces an OpenPGP message. The message can be encrypted, signed, or both,
+ * depending on its configuration.
+ *
  * This class is based upon Jens Neuhalfen's Bouncy-GPG PGPEncryptingStream.
  * @see <a href="https://github.com/neuhalje/bouncy-gpg/blob/master/src/main/java/name/neuhalfen/projects/crypto/bouncycastle/openpgp/encrypting/PGPEncryptingStream.java">Source</a>
  */
@@ -47,6 +50,8 @@ public final class EncryptionStream extends OutputStream {
     private static final int BUFFER_SIZE = 1 << 9;
 
     OutputStream outermostStream;
+    OutputStream signatureLayerStream;
+
     private ArmoredOutputStream armorOutputStream = null;
     private OutputStream publicKeyEncryptedStream = null;
     private PGPCompressedDataGenerator compressedDataGenerator;
@@ -130,6 +135,7 @@ public final class EncryptionStream extends OutputStream {
     }
 
     private void prepareOnePassSignatures() throws IOException, PGPException {
+        signatureLayerStream = outermostStream;
         SigningOptions signingOptions = options.getSigningOptions();
         if (signingOptions == null || signingOptions.getSigningMethods().isEmpty()) {
             // No singing options/methods -> no signing
@@ -274,7 +280,7 @@ public final class EncryptionStream extends OutputStream {
                 resultBuilder.addDetachedSignature(signingKey, signature);
             }
             if (!signingMethod.isDetached() || options.isCleartextSigned()) {
-                signature.encode(outermostStream);
+                signature.encode(signatureLayerStream);
             }
         }
     }
